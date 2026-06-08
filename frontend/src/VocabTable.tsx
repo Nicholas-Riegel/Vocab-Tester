@@ -133,7 +133,7 @@ function VocabTable() {
             if (repeatInterval) clearInterval(repeatInterval)
         }
     }, [])
-	
+
 	const rowClass = (w: VocabWord, i: number) => {
 		const classes = []
 		if (i === selectedIndex) classes.push('row-selected')
@@ -183,7 +183,8 @@ function VocabTable() {
 			<table>
 			<thead>
 				<tr>
-				<th>Article</th>
+				<th className="row-num">#</th>
+				<th className="article-col">Article</th>
 				<th>Word</th>
 				<th className="answer-col">Forms / Plural</th>
 				<th className="answer-col">Notes</th>
@@ -193,13 +194,14 @@ function VocabTable() {
 			</thead>
 			<tbody>
 				{words.map((w, i) => (
-				<tr key={w.id} ref={el => { rowRefs.current[i] = el }} className={rowClass(w, i)}>
-					<td>{w.article ?? ''}</td>
+				<tr key={w.id} ref={el => { rowRefs.current[i] = el }} className={rowClass(w, i)} onClick={() => moveTo(i)}>
+					<td className="row-num">{i + 1}</td>
+					<td className="article-col">{w.article ?? ''}</td>
 					<td>{w.word}</td>
-					<td className="answer-col">{w.forms ?? w.plural ?? ''}</td>
-					<td className="answer-col">{w.notes ?? ''}</td>
+					<td className="answer-col">{i === selectedIndex ? (w.forms ?? w.plural ?? '') : ''}</td>
+					<td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
 					<td className="question-col">{w.example ?? ''}</td>
-					<td className="answer-col">{w.english}</td>
+					<td className="answer-col">{i === selectedIndex ? w.english : ''}</td>
 				</tr>
 				))}
 			</tbody>

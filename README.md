@@ -1,5 +1,17 @@
 # Vocab Tester
 
+## Starting the app
+
+```bash
+./start.sh
+```
+
+Starts both backend and frontend. Press `Ctrl+C` to stop both.
+
+---
+
+## Manual startup
+
 ## Backend
 
 **Activate the virtual environment** (do this first, every time):
