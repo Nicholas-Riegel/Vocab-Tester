@@ -76,3 +76,25 @@ tr.row-selected {
 tr.row-excluded {
   color: #666;
 }
+
+.answer-visible .question-col {
+  display: none;
+}
+
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+kbd {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  color: #ccc;
+}
