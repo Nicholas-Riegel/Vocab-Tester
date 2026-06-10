@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import EditModal from './EditModal'
 
 interface VocabWord {
 	id: number
@@ -46,10 +47,12 @@ function VocabTable() {
     const [status, setStatus] = useState('active')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [answerVisible, setAnswerVisible] = useState(false)
+    const [editingWord, setEditingWord] = useState<VocabWord | null>(null)
     const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
     const selectedIndexRef = useRef(0)
     const wordsRef = useRef<VocabWord[]>([])
     const statusRef = useRef('active')
+    const editingWordRef = useRef<VocabWord | null>(null)
 
     const moveTo = (newIndex: number) => {
         selectedIndexRef.current = newIndex
@@ -83,6 +86,7 @@ function VocabTable() {
         let repeatTimeout: number | null = null
 
         const handleKey = (key: string) => {
+            if (editingWordRef.current) return
             const len = wordsRef.current.length
             if (key === 'ArrowDown') {
                 moveTo(Math.min(selectedIndexRef.current + 1, len - 1))
@@ -111,11 +115,17 @@ function VocabTable() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ flagged: newFlag }),
                 })
+            } else if (key === 'e' || key === 'E') {
+                const word = wordsRef.current[selectedIndexRef.current]
+                if (word) { editingWordRef.current = word; setEditingWord(word) }
             }
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault()
+            }
+            if (e.key === 'e' || e.key === 'E') {
                 e.preventDefault()
             }
             if (e.repeat) return
@@ -170,6 +180,24 @@ function VocabTable() {
 		return classes.join(' ')
 	}
 
+	const handleSave = (updated: VocabWord) => {
+		fetch(`http://127.0.0.1:8000/vocab/${updated.id}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(updated),
+		})
+		.then(res => res.json())
+		.then(saved => {
+			setWords(prev => {
+				const next = prev.map(w => w.id === saved.id ? saved : w)
+				wordsRef.current = next
+				return next
+			})
+			editingWordRef.current = null
+			setEditingWord(null)
+		})
+	}
+
 	return (
 		<div>
             <div className="toolbar">
@@ -205,6 +233,7 @@ function VocabTable() {
                     <span><kbd>←</kbd> hide answer</span>
                     <span><kbd>F</kbd> flag / unflag</span>
                     <span><kbd>D</kbd> exclude / restore</span>
+                    <span><kbd>E</kbd> edit</span>
                 </div>
             </div>
 
@@ -240,6 +269,13 @@ function VocabTable() {
                     </table>
                 </div>
             </div>
+			{editingWord && (
+				<EditModal
+					word={editingWord}
+					onSave={handleSave}
+					onClose={() => { editingWordRef.current = null; setEditingWord(null) }}
+				/>
+			)}
 		</div>
 	)
 }

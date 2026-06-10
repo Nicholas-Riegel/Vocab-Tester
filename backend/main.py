@@ -59,3 +59,35 @@ def update_flag(word_id: int, body: FlagUpdate):
         return {"ok": True}
     finally:
         conn.close()
+
+class VocabUpdate(BaseModel):
+    word: str
+    article: Optional[str] = None
+    english: str
+    word_type: str
+    source: str
+    chapter: int
+    forms: Optional[str] = None
+    plural: Optional[str] = None
+    notes: Optional[str] = None
+    example: Optional[str] = None
+
+@app.put("/vocab/{word_id}")
+def update_vocab(word_id: int, body: VocabUpdate):
+    conn = get_connection()
+    try:
+        conn.execute(
+            """UPDATE vocab SET
+                word = ?, article = ?, english = ?, word_type = ?,
+                source = ?, chapter = ?, forms = ?, plural = ?,
+                notes = ?, example = ?
+            WHERE id = ?""",
+            (body.word, body.article, body.english, body.word_type,
+             body.source, body.chapter, body.forms, body.plural,
+             body.notes, body.example, word_id)
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM vocab WHERE id = ?", (word_id,)).fetchone()
+        return dict(row)
+    finally:
+        conn.close()
