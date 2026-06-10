@@ -139,6 +139,24 @@ tr.row-excluded {
   display: none;
 }
 
+/* ── Noun mode: article and example become part of the answer ── */
+
+.noun-mode .article-col {
+  display: none;
+}
+
+.noun-mode.answer-visible .article-col {
+  display: table-cell;
+}
+
+.noun-mode .question-col {
+  display: none;
+}
+
+.noun-mode.answer-visible .question-col {
+  display: table-cell;
+}
+
 .legend {
   display: flex;
   gap: 1.5rem;

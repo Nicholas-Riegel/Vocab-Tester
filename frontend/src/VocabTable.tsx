@@ -254,7 +254,7 @@ function VocabTable() {
                 </div>
             </div>
 
-            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}`}>
+            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}${wordType === 'noun' ? ' noun-mode' : ''}`}>
                 <table className="header-table">
                     <thead>
                         <tr>
@@ -274,7 +274,7 @@ function VocabTable() {
                             {words.map((w, i) => (
                             <tr key={w.id} ref={el => { rowRefs.current[i] = el }} className={rowClass(w, i)} onClick={() => moveTo(i)}>
                                 <td className="row-num">{i + 1}</td>
-                                <td className="article-col">{w.article ?? ''}</td>
+                                <td className="article-col">{wordType === 'noun' ? (i === selectedIndex ? (w.article ?? '') : '') : (w.article ?? '')}</td>
                                 <td>{w.word}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.forms ?? w.plural ?? '') : ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
