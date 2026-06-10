@@ -49,6 +49,7 @@ function VocabTable() {
     const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
     const selectedIndexRef = useRef(0)
     const wordsRef = useRef<VocabWord[]>([])
+    const statusRef = useRef('active')
 
     const moveTo = (newIndex: number) => {
         selectedIndexRef.current = newIndex
@@ -89,12 +90,17 @@ function VocabTable() {
                 setAnswerVisible(true)
             } else if (key === 'ArrowLeft') {
                 setAnswerVisible(false)
-            } else if (key === '0' || key === '1' || key === 'x' || key === 'X') {
+            } else if (key === 'f' || key === 'F' || key === 'd' || key === 'D') {
                 const word = wordsRef.current[selectedIndexRef.current]
                 if (!word) return
-                const newFlag = key === '0' ? 0 : key === '1' ? 1 : -1
+                const isExcludeToggle = key === 'd' || key === 'D'
+                const newFlag = isExcludeToggle ? (word.flagged === -1 ? 0 : -1) : (word.flagged === 1 ? 0 : 1)
+                const currentStatus = statusRef.current
+                const shouldRemove = isExcludeToggle && newFlag === -1 && currentStatus !== 'all'
                 setWords(prev => {
-                    const updated = prev.map(w => w.id === word.id ? { ...w, flagged: newFlag } : w)
+                    const updated = shouldRemove
+                        ? prev.filter(w => w.id !== word.id)
+                        : prev.map(w => w.id === word.id ? { ...w, flagged: newFlag } : w)
                     wordsRef.current = updated
                     return updated
                 })
@@ -111,6 +117,24 @@ function VocabTable() {
                 e.preventDefault()
             }
             if (e.repeat) return
+            if (e.metaKey && e.key === 'ArrowDown') {
+                moveTo(wordsRef.current.length - 1)
+                return
+            }
+            if (e.metaKey && e.key === 'ArrowUp') {
+                moveTo(0)
+                return
+            }
+            if (e.key === 'PageDown') {
+                e.preventDefault()
+                moveTo(Math.min(selectedIndexRef.current + 20, wordsRef.current.length - 1))
+                return
+            }
+            if (e.key === 'PageUp') {
+                e.preventDefault()
+                moveTo(Math.max(selectedIndexRef.current - 20, 0))
+                return
+            }
             handleKey(e.key)
             if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                 repeatTimeout = window.setTimeout(() => {
@@ -144,43 +168,44 @@ function VocabTable() {
 
 	return (
 		<div>
-		<div className="legend">
-			<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-			<span><kbd>→</kbd> show answer</span>
-			<span><kbd>←</kbd> hide answer</span>
-			<span><kbd>1</kbd> flag</span>
-			<span><kbd>0</kbd> unflag</span>
-			<span><kbd>X</kbd> exclude</span>
-		</div>
-		<div className="filters">
-			<label>
-			Section:
-			<select value={source} onChange={e => setSource(e.target.value)}>
-				{SOURCES.map(s => (
-				<option key={s.value} value={s.value}>{s.label}</option>
-				))}
-			</select>
-			</label>
-			<label>
-			Word type:
-			<select value={wordType} onChange={e => setWordType(e.target.value)}>
-				{WORD_TYPES.map(t => (
-				<option key={t.value} value={t.value}>{t.label}</option>
-				))}
-			</select>
-			</label>
-			<label>
-			Status:
-			<select value={status} onChange={e => setStatus(e.target.value)}>
-				{STATUSES.map(s => (
-				<option key={s.value} value={s.value}>{s.label}</option>
-				))}
-			</select>
-			</label>
+		<div className="toolbar">
+			<div className="filters">
+				<label>
+				Section:
+				<select value={source} onChange={e => setSource(e.target.value)}>
+					{SOURCES.map(s => (
+					<option key={s.value} value={s.value}>{s.label}</option>
+					))}
+				</select>
+				</label>
+				<label>
+				Word type:
+				<select value={wordType} onChange={e => setWordType(e.target.value)}>
+					{WORD_TYPES.map(t => (
+					<option key={t.value} value={t.value}>{t.label}</option>
+					))}
+				</select>
+				</label>
+				<label>
+				Status:
+				<select value={status} onChange={e => { statusRef.current = e.target.value; setStatus(e.target.value) }}>
+					{STATUSES.map(s => (
+					<option key={s.value} value={s.value}>{s.label}</option>
+					))}
+				</select>
+				</label>
+			</div>
+			<div className="legend">
+				<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+				<span><kbd>→</kbd> show answer</span>
+				<span><kbd>←</kbd> hide answer</span>
+				<span><kbd>F</kbd> flag / unflag</span>
+				<span><kbd>D</kbd> exclude / restore</span>
+			</div>
 		</div>
 
-		<div className={`table-container${answerVisible ? ' answer-visible' : ''}`}>
-			<table>
+		<div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}`}>
+			<table className="header-table">
 			<thead>
 				<tr>
 				<th className="row-num">#</th>
@@ -192,6 +217,9 @@ function VocabTable() {
 				<th className="answer-col">English</th>
 				</tr>
 			</thead>
+			</table>
+			<div className="table-container">
+			<table>
 			<tbody>
 				{words.map((w, i) => (
 				<tr key={w.id} ref={el => { rowRefs.current[i] = el }} className={rowClass(w, i)} onClick={() => moveTo(i)}>
@@ -206,6 +234,7 @@ function VocabTable() {
 				))}
 			</tbody>
 			</table>
+			</div>
 		</div>
 		</div>
 	)

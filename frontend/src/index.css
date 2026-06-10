@@ -1,3 +1,22 @@
+:root {
+  /* ── Page backgrounds ── */
+  --bg-page:        #1a1a1a;   /* main page background */
+  --bg-surface:     #2a2a2a;   /* raised elements: header row, dropdowns, kbd */
+  --bg-border:      #333;      /* subtle row divider lines */
+  --bg-border-ui:   #555;      /* dropdown and kbd borders */
+
+  /* ── Text ── */
+  --text-primary:   #aeadad;   /* normal text */
+  --text-muted:     #888;      /* secondary text (legend labels) */
+  --text-dim:       #555;      /* very faint text (row numbers) */
+  --text-kbd:       #ccc;      /* key labels inside <kbd> badges */
+
+  /* ── Row states ── */
+  --row-flagged:           #1a2a4a;               /* flagged row background (selected or not) */
+  --row-selected-outline:  rgba(255, 255, 255, 0.6); /* white border on selected row cells */
+  --row-excluded-text:     #555;                  /* dimmed text for excluded (D) rows */
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -6,22 +25,39 @@
 
 body {
   font-family: system-ui, sans-serif;
-  background: #1a1a1a;
-  color: #e0e0e0;
+  font-weight: 300;
+  background: var(--bg-page);
+  color: var(--text-primary);
 }
 
 .app {
-  padding: 2rem;
+  padding: 0.75rem 2rem;
+}
+
+.app-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 tr.row-flagged {
-  background-color: #4a3000;
+  background-color: var(--row-flagged);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .filters {
   display: flex;
   gap: 2rem;
-  margin-bottom: 1rem;
 }
 
 .filters label {
@@ -31,9 +67,9 @@ tr.row-flagged {
 }
 
 .filters select {
-  background: #2a2a2a;
-  color: #e0e0e0;
-  border: 1px solid #555;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--bg-border-ui);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
 }
@@ -47,22 +83,42 @@ table {
 th, td {
   text-align: left;
   padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--bg-border);
 }
 
 th {
-  background: #2a2a2a;
+  background: var(--bg-surface);
   font-weight: 600;
-  position: sticky;
-  top: 0;
 }
 
-tr.row-selected {
-  background-color: #1a3a5c;
+tr.row-selected td {
+  box-shadow: inset 0 1px 0 var(--row-selected-outline), inset 0 -1px 0 var(--row-selected-outline);
+}
+
+tr.row-selected td:first-child {
+  box-shadow: inset 1px 1px 0 var(--row-selected-outline), inset 0 -1px 0 var(--row-selected-outline);
+}
+
+tr.row-selected td:last-child {
+  box-shadow: inset -1px 1px 0 var(--row-selected-outline), inset 0 -1px 0 var(--row-selected-outline);
+}
+
+tr.row-selected.row-flagged {
+  background-color: var(--row-flagged);
+}
+
+.table-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 8rem);
+}
+
+.header-table {
+  flex-shrink: 0;
 }
 
 .table-container {
-  height: calc(100vh - 8rem);
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -75,7 +131,7 @@ tr.row-selected {
 }
 
 tr.row-excluded {
-  color: #666;
+  color: var(--row-excluded-text);
 }
 
 .answer-visible .question-col {
@@ -85,23 +141,22 @@ tr.row-excluded {
 .legend {
   display: flex;
   gap: 1.5rem;
-  margin-bottom: 0.75rem;
   font-size: 0.8rem;
-  color: #888;
+  color: var(--text-muted);
 }
 
 kbd {
-  background: #2a2a2a;
-  border: 1px solid #555;
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border-ui);
   border-radius: 3px;
   padding: 0.1rem 0.35rem;
   font-family: system-ui, sans-serif;
   font-size: 0.8rem;
-  color: #ccc;
+  color: var(--text-kbd);
 }
 
 .row-num {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.75rem;
   text-align: right;
   padding-right: 0.5rem;
