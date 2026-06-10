@@ -82,8 +82,9 @@ table {
 
 th, td {
   text-align: left;
-  padding: 0.4rem 0.75rem;
+  padding: 0.25rem 0.75rem;
   border-bottom: 1px solid var(--bg-border);
+  font-size: 0.90rem;
 }
 
 th {
@@ -165,5 +166,5 @@ kbd {
 }
 
 .article-col {
-  width: 3.5rem;
+  width: 2.5rem;
 }

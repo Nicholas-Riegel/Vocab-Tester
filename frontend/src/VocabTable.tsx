@@ -40,7 +40,7 @@ const STATUSES = [
 
 function VocabTable() {
 	
-	    const [words, setWords] = useState<VocabWord[]>([])
+	const [words, setWords] = useState<VocabWord[]>([])
     const [source, setSource] = useState('')
     const [wordType, setWordType] = useState('')
     const [status, setStatus] = useState('active')
@@ -58,6 +58,7 @@ function VocabTable() {
     }
 
     const fetchWords = () => {
+
         const params = new URLSearchParams()
         if (source) params.append('source', source)
         if (wordType) params.append('word_type', wordType)
@@ -77,6 +78,7 @@ function VocabTable() {
     }, [source, wordType, status])
 
     useEffect(() => {
+
         let repeatInterval: number | null = null
         let repeatTimeout: number | null = null
 
@@ -118,21 +120,23 @@ function VocabTable() {
             }
             if (e.repeat) return
             if (e.metaKey && e.key === 'ArrowDown') {
-                moveTo(wordsRef.current.length - 1)
+                e.preventDefault()
+                moveTo(Math.min(selectedIndexRef.current + 29, wordsRef.current.length - 1))
                 return
             }
             if (e.metaKey && e.key === 'ArrowUp') {
-                moveTo(0)
+                e.preventDefault()
+                moveTo(Math.max(selectedIndexRef.current - 29, 0))
                 return
             }
             if (e.key === 'PageDown') {
                 e.preventDefault()
-                moveTo(Math.min(selectedIndexRef.current + 20, wordsRef.current.length - 1))
+                moveTo(wordsRef.current.length - 1)
                 return
             }
             if (e.key === 'PageUp') {
                 e.preventDefault()
-                moveTo(Math.max(selectedIndexRef.current - 20, 0))
+                moveTo(0)
                 return
             }
             handleKey(e.key)
@@ -168,74 +172,74 @@ function VocabTable() {
 
 	return (
 		<div>
-		<div className="toolbar">
-			<div className="filters">
-				<label>
-				Section:
-				<select value={source} onChange={e => setSource(e.target.value)}>
-					{SOURCES.map(s => (
-					<option key={s.value} value={s.value}>{s.label}</option>
-					))}
-				</select>
-				</label>
-				<label>
-				Word type:
-				<select value={wordType} onChange={e => setWordType(e.target.value)}>
-					{WORD_TYPES.map(t => (
-					<option key={t.value} value={t.value}>{t.label}</option>
-					))}
-				</select>
-				</label>
-				<label>
-				Status:
-				<select value={status} onChange={e => { statusRef.current = e.target.value; setStatus(e.target.value) }}>
-					{STATUSES.map(s => (
-					<option key={s.value} value={s.value}>{s.label}</option>
-					))}
-				</select>
-				</label>
-			</div>
-			<div className="legend">
-				<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-				<span><kbd>→</kbd> show answer</span>
-				<span><kbd>←</kbd> hide answer</span>
-				<span><kbd>F</kbd> flag / unflag</span>
-				<span><kbd>D</kbd> exclude / restore</span>
-			</div>
-		</div>
+            <div className="toolbar">
+                <div className="filters">
+                    <label>
+                    Section:
+                    <select value={source} onChange={e => setSource(e.target.value)}>
+                        {SOURCES.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                    </select>
+                    </label>
+                    <label>
+                    Word type:
+                    <select value={wordType} onChange={e => setWordType(e.target.value)}>
+                        {WORD_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                    </select>
+                    </label>
+                    <label>
+                    Status:
+                    <select value={status} onChange={e => { statusRef.current = e.target.value; setStatus(e.target.value) }}>
+                        {STATUSES.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                    </select>
+                    </label>
+                </div>
+                <div className="legend">
+                    <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+                    <span><kbd>→</kbd> show answer</span>
+                    <span><kbd>←</kbd> hide answer</span>
+                    <span><kbd>F</kbd> flag / unflag</span>
+                    <span><kbd>D</kbd> exclude / restore</span>
+                </div>
+            </div>
 
-		<div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}`}>
-			<table className="header-table">
-			<thead>
-				<tr>
-				<th className="row-num">#</th>
-				<th className="article-col">Article</th>
-				<th>Word</th>
-				<th className="answer-col">Forms / Plural</th>
-				<th className="answer-col">Notes</th>
-				<th className="question-col">Example</th>
-				<th className="answer-col">English</th>
-				</tr>
-			</thead>
-			</table>
-			<div className="table-container">
-			<table>
-			<tbody>
-				{words.map((w, i) => (
-				<tr key={w.id} ref={el => { rowRefs.current[i] = el }} className={rowClass(w, i)} onClick={() => moveTo(i)}>
-					<td className="row-num">{i + 1}</td>
-					<td className="article-col">{w.article ?? ''}</td>
-					<td>{w.word}</td>
-					<td className="answer-col">{i === selectedIndex ? (w.forms ?? w.plural ?? '') : ''}</td>
-					<td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
-					<td className="question-col">{w.example ?? ''}</td>
-					<td className="answer-col">{i === selectedIndex ? w.english : ''}</td>
-				</tr>
-				))}
-			</tbody>
-			</table>
-			</div>
-		</div>
+            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}`}>
+                <table className="header-table">
+                    <thead>
+                        <tr>
+                            <th className="row-num">#</th>
+                            <th className="article-col">Art.</th>
+                            <th>Word</th>
+                            <th className="answer-col">Forms / Plural</th>
+                            <th className="answer-col">Notes</th>
+                            <th className="question-col">Example</th>
+                            <th className="answer-col">English</th>
+                        </tr>
+                    </thead>
+                </table>
+                <div className="table-container">
+                    <table>
+                        <tbody>
+                            {words.map((w, i) => (
+                            <tr key={w.id} ref={el => { rowRefs.current[i] = el }} className={rowClass(w, i)} onClick={() => moveTo(i)}>
+                                <td className="row-num">{i + 1}</td>
+                                <td className="article-col">{w.article ?? ''}</td>
+                                <td>{w.word}</td>
+                                <td className="answer-col">{i === selectedIndex ? (w.forms ?? w.plural ?? '') : ''}</td>
+                                <td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
+                                <td className="question-col">{w.example ?? ''}</td>
+                                <td className="answer-col">{i === selectedIndex ? w.english : ''}</td>
+                            </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 		</div>
 	)
 }
