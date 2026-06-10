@@ -198,6 +198,23 @@ function VocabTable() {
 		})
 	}
 
+	const handleDelete = () => {
+		if (!editingWordRef.current) return
+		const word = editingWordRef.current
+		if (!window.confirm(`Delete "${word.word}"? This cannot be undone.`)) return
+		fetch(`http://127.0.0.1:8000/vocab/${word.id}`, { method: 'DELETE' })
+			.then(() => {
+				setWords(prev => {
+					const next = prev.filter(w => w.id !== word.id)
+					wordsRef.current = next
+					return next
+				})
+				setSelectedIndex(prev => Math.min(prev, wordsRef.current.length - 1))
+				editingWordRef.current = null
+				setEditingWord(null)
+			})
+	}
+
 	return (
 		<div>
             <div className="toolbar">
@@ -273,6 +290,7 @@ function VocabTable() {
 				<EditModal
 					word={editingWord}
 					onSave={handleSave}
+					onDelete={handleDelete}
 					onClose={() => { editingWordRef.current = null; setEditingWord(null) }}
 				/>
 			)}

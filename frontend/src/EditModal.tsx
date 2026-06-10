@@ -18,6 +18,7 @@ interface VocabWord {
 interface EditModalProps {
 	word: VocabWord
 	onSave: (updated: VocabWord) => void
+	onDelete: () => void
 	onClose: () => void
 }
 
@@ -31,7 +32,7 @@ const SOURCES = [
 
 const WORD_TYPES = ['noun', 'verb', 'phrase', 'other']
 
-function EditModal({ word, onSave, onClose }: EditModalProps) {
+function EditModal({ word, onSave, onDelete, onClose }: EditModalProps) {
 	const [form, setForm] = useState({
 		word: word.word,
 		article: word.article ?? '',
@@ -143,6 +144,8 @@ function EditModal({ word, onSave, onClose }: EditModalProps) {
 					</div>
 
 					<div className="modal-actions">
+						<button type="button" className="btn-danger" onClick={onDelete}>Delete</button>
+						<div style={{ flex: 1 }} />
 						<button type="button" onClick={onClose}>Cancel</button>
 						<button type="submit" className="btn-primary">Save</button>
 					</div>

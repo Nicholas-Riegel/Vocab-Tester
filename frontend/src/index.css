@@ -276,6 +276,16 @@ kbd {
   color: #dde;
 }
 
+.modal-actions button.btn-danger {
+  background: #4a1a1a;
+  border-color: #aa3a3a;
+  color: #dcc;
+}
+
+.modal-actions button.btn-danger:hover {
+  border-color: #cc5555;
+}
+
 .modal-actions button:hover {
   border-color: var(--row-selected-outline);
 }

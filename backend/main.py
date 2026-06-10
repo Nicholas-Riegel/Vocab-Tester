@@ -72,6 +72,16 @@ class VocabUpdate(BaseModel):
     notes: Optional[str] = None
     example: Optional[str] = None
 
+@app.delete("/vocab/{word_id}")
+def delete_vocab(word_id: int):
+    conn = get_connection()
+    try:
+        conn.execute("DELETE FROM vocab WHERE id = ?", (word_id,))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
 @app.put("/vocab/{word_id}")
 def update_vocab(word_id: int, body: VocabUpdate):
     conn = get_connection()
