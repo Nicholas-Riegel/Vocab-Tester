@@ -13,6 +13,7 @@
 
   /* ── Row states ── */
   --row-flagged:           #1a2a4a;               /* flagged row background (selected or not) */
+  --row-noun-flagged:      #341161b4;               /* gender-difficulty flag background (noun mode only) */
   --row-selected-outline:  rgba(255, 255, 255, 0.6); /* white border on selected row cells */
   --row-excluded-text:     #555;                  /* dimmed text for excluded (D) rows */
 }
@@ -106,6 +107,15 @@ tr.row-selected td:last-child {
 
 tr.row-selected.row-flagged {
   background-color: var(--row-flagged);
+}
+
+/* ── Noun mode only: amber background for gender-difficulty flagged rows ── */
+.noun-mode tr.row-noun-flagged {
+  background-color: var(--row-noun-flagged);
+}
+
+.noun-mode tr.row-selected.row-noun-flagged {
+  background-color: var(--row-noun-flagged);
 }
 
 .table-wrapper {

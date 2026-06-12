@@ -60,6 +60,22 @@ def update_flag(word_id: int, body: FlagUpdate):
     finally:
         conn.close()
 
+class NounFlagUpdate(BaseModel):
+    noun_flagged: int
+
+@app.patch("/vocab/{word_id}/noun_flag")
+def update_noun_flag(word_id: int, body: NounFlagUpdate):
+    conn = get_connection()
+    try:
+        conn.execute(
+            "UPDATE vocab SET noun_flagged = ? WHERE id = ?",
+            (body.noun_flagged, word_id)
+        )
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
 class VocabUpdate(BaseModel):
     word: str
     article: Optional[str] = None

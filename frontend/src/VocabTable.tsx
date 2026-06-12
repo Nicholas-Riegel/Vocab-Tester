@@ -14,6 +14,7 @@ interface VocabWord {
 	notes: string | null
 	example: string | null
 	flagged: number
+	noun_flagged: number
 }
 
 const SOURCES = [
@@ -52,6 +53,7 @@ function VocabTable() {
     const selectedIndexRef = useRef(0)
     const wordsRef = useRef<VocabWord[]>([])
     const statusRef = useRef('active')
+    const wordTypeRef = useRef('')
     const editingWordRef = useRef<VocabWord | null>(null)
 
     const moveTo = (newIndex: number) => {
@@ -100,21 +102,36 @@ function VocabTable() {
                 const word = wordsRef.current[selectedIndexRef.current]
                 if (!word) return
                 const isExcludeToggle = key === 'd' || key === 'D'
-                const newFlag = isExcludeToggle ? (word.flagged === -1 ? 0 : -1) : (word.flagged === 1 ? 0 : 1)
-                const currentStatus = statusRef.current
-                const shouldRemove = isExcludeToggle && newFlag === -1 && currentStatus !== 'all'
-                setWords(prev => {
-                    const updated = shouldRemove
-                        ? prev.filter(w => w.id !== word.id)
-                        : prev.map(w => w.id === word.id ? { ...w, flagged: newFlag } : w)
-                    wordsRef.current = updated
-                    return updated
-                })
-                fetch(`http://127.0.0.1:8000/vocab/${word.id}/flag`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ flagged: newFlag }),
-                })
+                const isFlagToggle = key === 'f' || key === 'F'
+                if (isFlagToggle && wordTypeRef.current === 'noun') {
+                    const newNounFlag = word.noun_flagged === 1 ? 0 : 1
+                    setWords(prev => {
+                        const updated = prev.map(w => w.id === word.id ? { ...w, noun_flagged: newNounFlag } : w)
+                        wordsRef.current = updated
+                        return updated
+                    })
+                    fetch(`http://127.0.0.1:8000/vocab/${word.id}/noun_flag`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ noun_flagged: newNounFlag }),
+                    })
+                } else {
+                    const newFlag = isExcludeToggle ? (word.flagged === -1 ? 0 : -1) : (word.flagged === 1 ? 0 : 1)
+                    const currentStatus = statusRef.current
+                    const shouldRemove = isExcludeToggle && newFlag === -1 && currentStatus !== 'all'
+                    setWords(prev => {
+                        const updated = shouldRemove
+                            ? prev.filter(w => w.id !== word.id)
+                            : prev.map(w => w.id === word.id ? { ...w, flagged: newFlag } : w)
+                        wordsRef.current = updated
+                        return updated
+                    })
+                    fetch(`http://127.0.0.1:8000/vocab/${word.id}/flag`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ flagged: newFlag }),
+                    })
+                }
             } else if (key === 'e' || key === 'E') {
                 const word = wordsRef.current[selectedIndexRef.current]
                 if (word) { editingWordRef.current = word; setEditingWord(word) }
@@ -177,6 +194,7 @@ function VocabTable() {
 		if (i === selectedIndex) classes.push('row-selected')
 		if (w.flagged === 1) classes.push('row-flagged')
 		if (w.flagged === -1) classes.push('row-excluded')
+		if (w.noun_flagged === 1) classes.push('row-noun-flagged')
 		return classes.join(' ')
 	}
 
@@ -229,7 +247,7 @@ function VocabTable() {
                     </label>
                     <label>
                     Word type:
-                    <select value={wordType} onChange={e => setWordType(e.target.value)}>
+                    <select value={wordType} onChange={e => { wordTypeRef.current = e.target.value; setWordType(e.target.value) }}>
                         {WORD_TYPES.map(t => (
                         <option key={t.value} value={t.value}>{t.label}</option>
                         ))}
@@ -248,7 +266,7 @@ function VocabTable() {
                     <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
                     <span><kbd>→</kbd> show answer</span>
                     <span><kbd>←</kbd> hide answer</span>
-                    <span><kbd>F</kbd> flag / unflag</span>
+                    <span><kbd>F</kbd> flag / unflag (gender flag in noun mode)</span>
                     <span><kbd>D</kbd> exclude / restore</span>
                     <span><kbd>E</kbd> edit</span>
                 </div>
