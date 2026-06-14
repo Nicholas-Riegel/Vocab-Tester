@@ -13,6 +13,7 @@ interface VocabWord {
 	notes: string | null
 	example: string | null
 	flagged: number
+	noun_flagged: number
 }
 
 interface EditModalProps {

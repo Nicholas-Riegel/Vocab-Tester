@@ -264,9 +264,8 @@ function VocabTable() {
                 </div>
                 <div className="legend">
                     <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-                    <span><kbd>→</kbd> show answer</span>
-                    <span><kbd>←</kbd> hide answer</span>
-                    <span><kbd>F</kbd> flag / unflag (gender flag in noun mode)</span>
+                    <span><kbd>→</kbd><kbd>←</kbd> show / hide answer</span>
+                    <span><kbd>F</kbd> flag / unflag</span>
                     <span><kbd>D</kbd> exclude / restore</span>
                     <span><kbd>E</kbd> edit</span>
                 </div>
@@ -279,7 +278,8 @@ function VocabTable() {
                             <th className="row-num">#</th>
                             <th className="article-col">Art.</th>
                             <th>Word</th>
-                            <th className="answer-col">Forms / Plural</th>
+                            <th className="answer-col">Verb Forms</th>
+                            <th className="answer-col">Plural</th>
                             <th className="answer-col">Notes</th>
                             <th className="question-col">Example</th>
                             <th className="answer-col">English</th>
@@ -294,7 +294,8 @@ function VocabTable() {
                                 <td className="row-num">{i + 1}</td>
                                 <td className="article-col">{wordType === 'noun' ? (i === selectedIndex ? (w.article ?? '') : '') : (w.article ?? '')}</td>
                                 <td>{w.word}</td>
-                                <td className="answer-col">{i === selectedIndex ? (w.forms ?? w.plural ?? '') : ''}</td>
+                                <td className="answer-col">{i === selectedIndex ? (w.forms ?? '') : ''}</td>
+                                <td className="answer-col">{i === selectedIndex ? (w.plural ?? '') : ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
                                 <td className="question-col">{w.example ?? ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? w.english : ''}</td>
