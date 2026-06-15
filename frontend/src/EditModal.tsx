@@ -14,6 +14,7 @@ interface VocabWord {
 	example: string | null
 	flagged: number
 	noun_flagged: number
+	level: string | null
 }
 
 interface EditModalProps {

@@ -15,6 +15,7 @@ interface VocabWord {
 	example: string | null
 	flagged: number
 	noun_flagged: number
+	level: string | null
 }
 
 const SOURCES = [
@@ -23,6 +24,8 @@ const SOURCES = [
 	{ label: 'A2', value: 'Deutsch Intensiv A2' },
 	{ label: 'B1', value: 'Deutsch Intensiv B1' },
 	{ label: 'B2', value: 'Deutsch Intensiv B2' },
+	{ label: 'C1', value: 'C1' },
+	{ label: 'Frequency List', value: 'Frequency List' },
 	{ label: 'Reading', value: 'Reading' },
 ]
 
@@ -45,7 +48,7 @@ function VocabTable() {
 	const [words, setWords] = useState<VocabWord[]>([])
     const [source, setSource] = useState('')
     const [wordType, setWordType] = useState('')
-    const [status, setStatus] = useState('active')
+    const [status, setStatus] = useState('all')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [answerVisible, setAnswerVisible] = useState(false)
     const [editingWord, setEditingWord] = useState<VocabWord | null>(null)

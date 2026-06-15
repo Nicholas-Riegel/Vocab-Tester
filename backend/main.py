@@ -18,6 +18,7 @@ def get_vocab(
     source: Optional[str] = Query(None),
     word_type: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    level: Optional[str] = Query(None),
 ):
     conn = get_connection()
     try:
@@ -31,14 +32,22 @@ def get_vocab(
         else:  # default: 'active'
             sql += " AND flagged != -1"
 
-        if source:
+        if source == 'Frequency List':
+            sql += " AND frequency_rank IS NOT NULL"
+        elif source:
             sql += " AND source = ?"
             params.append(source)
         if word_type:
             sql += " AND word_type = ?"
             params.append(word_type)
+        if level:
+            sql += " AND level = ?"
+            params.append(level)
 
-        sql += " ORDER BY id"
+        if source == 'Frequency List':
+            sql += " ORDER BY frequency_rank"
+        else:
+            sql += " ORDER BY id"
         rows = conn.execute(sql, params).fetchall()
         return [dict(row) for row in rows]
     finally:
