@@ -76,6 +76,7 @@ function VocabTable() {
         fetch(`http://127.0.0.1:8000/vocab?${params}`)
         .then(res => res.json())
         .then(data => {
+            console.log('Fetched words:', data.map((w: VocabWord) => ({ id: w.id, word: w.word, example: w.example })))
             setWords(data)
             wordsRef.current = data
             moveTo(0)
@@ -202,7 +203,8 @@ function VocabTable() {
 		if (i === selectedIndex) classes.push('row-selected')
 		if (w.flagged === 2) classes.push('row-super-flagged')
 		else if (w.flagged === 1) classes.push('row-flagged')
-		if (w.noun_flagged === 1) classes.push('row-noun-flagged')
+		if (w.noun_flagged === 2) classes.push('row-noun-super-flagged')
+		else if (w.noun_flagged === 1) classes.push('row-noun-flagged')
 		return classes.join(' ')
 	}
 
@@ -305,7 +307,7 @@ function VocabTable() {
                                 <td className="answer-col">{i === selectedIndex ? (w.forms ?? '') : ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.plural ?? '') : ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
-                                <td className="question-col">{w.example ?? ''}</td>
+                                <td className="question-col">{wordType === 'noun' ? (i === selectedIndex ? (w.example ?? '') : '') : (w.example ?? '')}</td>
                                 <td className="answer-col">{i === selectedIndex ? w.english : ''}</td>
                             </tr>
                             ))}

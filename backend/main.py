@@ -29,10 +29,14 @@ def get_vocab(
         sql = "SELECT * FROM vocab WHERE 1=1"
         params = []
 
+        # For nouns, use noun_flagged column; for other types, use flagged column
+        is_noun = word_type == 'noun'
+        flag_column = 'noun_flagged' if is_noun else 'flagged'
+        
         if status == 'flagged':
-            sql += " AND flagged >= 1"
+            sql += f" AND {flag_column} >= 1"
         elif status == 'superflagged':
-            sql += " AND flagged = 2"
+            sql += f" AND {flag_column} = 2"
         # 'all' or any other status: no filter
 
         if source == 'Frequency List':
