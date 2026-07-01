@@ -13,9 +13,9 @@
 
   /* ── Row states ── */
   --row-flagged:           #1a2a4a;               /* flagged row background (selected or not) */
+  --row-super-flagged:     #4a1a1a;               /* super-flagged row background (extra difficult) */
   --row-noun-flagged:      #341161b4;               /* gender-difficulty flag background (noun mode only) */
   --row-selected-outline:  rgba(255, 255, 255, 0.6); /* white border on selected row cells */
-  --row-excluded-text:     #555;                  /* dimmed text for excluded (D) rows */
 }
 
 *, *::before, *::after {
@@ -46,6 +46,10 @@ body {
 
 tr.row-flagged {
   background-color: var(--row-flagged);
+}
+
+tr.row-super-flagged {
+  background-color: var(--row-super-flagged);
 }
 
 .toolbar {
@@ -109,6 +113,10 @@ tr.row-selected.row-flagged {
   background-color: var(--row-flagged);
 }
 
+tr.row-selected.row-super-flagged {
+  background-color: var(--row-super-flagged);
+}
+
 /* ── Noun mode only: amber background for gender-difficulty flagged rows ── */
 .noun-mode tr.row-noun-flagged {
   background-color: var(--row-noun-flagged);
@@ -141,11 +149,11 @@ tr.row-selected.row-flagged {
   display: table-cell;
 }
 
-tr.row-excluded {
-  color: var(--row-excluded-text);
+.answer-visible .question-col {
+  display: none;
 }
 
-.answer-visible .question-col {
+.examples-hidden .question-col {
   display: none;
 }
 

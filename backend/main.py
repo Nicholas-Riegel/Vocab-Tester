@@ -8,7 +8,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite's default port
+    allow_origins=[
+        "http://localhost:5173",  # Vite's default port
+        "chrome-extension://*",   # Allow Chrome extension
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -26,11 +30,10 @@ def get_vocab(
         params = []
 
         if status == 'flagged':
-            sql += " AND flagged = 1"
-        elif status == 'all':
-            pass  # no filter
-        else:  # default: 'active'
-            sql += " AND flagged != -1"
+            sql += " AND flagged >= 1"
+        elif status == 'superflagged':
+            sql += " AND flagged = 2"
+        # 'all' or any other status: no filter
 
         if source == 'Frequency List':
             sql += " AND frequency_rank IS NOT NULL"
@@ -124,5 +127,55 @@ def update_vocab(word_id: int, body: VocabUpdate):
         conn.commit()
         row = conn.execute("SELECT * FROM vocab WHERE id = ?", (word_id,)).fetchone()
         return dict(row)
+    finally:
+        conn.close()
+
+@app.get("/api/translate")
+def translate_word(word: str = Query(...)):
+    """Look up a German word in the database. Returns translation if found."""
+    conn = get_connection()
+    try:
+        # Search for exact match (case-insensitive)
+        row = conn.execute(
+            "SELECT id, word, article, english, word_type, forms, plural FROM vocab WHERE LOWER(word) = LOWER(?)",
+            (word,)
+        ).fetchone()
+        
+        if row:
+            return {
+                "found": True,
+                "word": row[1],
+                "article": row[2],
+                "english": row[3],
+                "word_type": row[4],
+                "forms": row[5],
+                "plural": row[6],
+                "id": row[0]
+            }
+        else:
+            return {"found": False}
+    finally:
+        conn.close()
+
+class QuickAddVocab(BaseModel):
+    word: str
+    english: str
+    article: Optional[str] = None
+    word_type: str = "other"
+
+@app.post("/api/vocab/quick-add")
+def quick_add_vocab(body: QuickAddVocab):
+    """Quickly add a new vocabulary word from the browser extension."""
+    conn = get_connection()
+    try:
+        conn.execute(
+            """INSERT INTO vocab (word, article, english, word_type, source, chapter, flagged)
+               VALUES (?, ?, ?, ?, 'Browser Extension', 0, 0)""",
+            (body.word, body.article, body.english, body.word_type)
+        )
+        conn.commit()
+        row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        row = conn.execute("SELECT * FROM vocab WHERE id = ?", (row_id,)).fetchone()
+        return {"ok": True, "word": dict(row)}
     finally:
         conn.close()

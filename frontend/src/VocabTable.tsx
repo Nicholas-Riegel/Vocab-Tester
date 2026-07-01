@@ -38,8 +38,8 @@ const WORD_TYPES = [
 ]
 
 const STATUSES = [
-	{ label: 'Active', value: 'active' },
 	{ label: 'Flagged', value: 'flagged' },
+	{ label: 'Super-flagged', value: 'superflagged' },
 	{ label: 'All', value: 'all' },
 ]
 
@@ -51,11 +51,12 @@ function VocabTable() {
     const [status, setStatus] = useState('all')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [answerVisible, setAnswerVisible] = useState(false)
+    const [examplesVisible, setExamplesVisible] = useState(true)
     const [editingWord, setEditingWord] = useState<VocabWord | null>(null)
     const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
     const selectedIndexRef = useRef(0)
     const wordsRef = useRef<VocabWord[]>([])
-    const statusRef = useRef('active')
+    const statusRef = useRef('all')
     const wordTypeRef = useRef('')
     const editingWordRef = useRef<VocabWord | null>(null)
 
@@ -101,31 +102,29 @@ function VocabTable() {
                 setAnswerVisible(true)
             } else if (key === 'ArrowLeft') {
                 setAnswerVisible(false)
-            } else if (key === 'f' || key === 'F' || key === 'd' || key === 'D') {
+            } else if (key === 'e' || key === 'E') {
+                setExamplesVisible(prev => !prev)
+            } else if (key === '1' || key === '2' || key === '3') {
                 const word = wordsRef.current[selectedIndexRef.current]
                 if (!word) return
-                const isExcludeToggle = key === 'd' || key === 'D'
-                const isFlagToggle = key === 'f' || key === 'F'
-                if (isFlagToggle && wordTypeRef.current === 'noun') {
-                    const newNounFlag = word.noun_flagged === 1 ? 0 : 1
+                // Map keyboard 1/2/3 to database 0/1/2
+                const newFlag = parseInt(key) - 1
+                
+                // In noun mode, update noun_flagged instead of flagged
+                if (wordTypeRef.current === 'noun') {
                     setWords(prev => {
-                        const updated = prev.map(w => w.id === word.id ? { ...w, noun_flagged: newNounFlag } : w)
+                        const updated = prev.map(w => w.id === word.id ? { ...w, noun_flagged: newFlag } : w)
                         wordsRef.current = updated
                         return updated
                     })
                     fetch(`http://127.0.0.1:8000/vocab/${word.id}/noun_flag`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ noun_flagged: newNounFlag }),
+                        body: JSON.stringify({ noun_flagged: newFlag }),
                     })
                 } else {
-                    const newFlag = isExcludeToggle ? (word.flagged === -1 ? 0 : -1) : (word.flagged === 1 ? 0 : 1)
-                    const currentStatus = statusRef.current
-                    const shouldRemove = isExcludeToggle && newFlag === -1 && currentStatus !== 'all'
                     setWords(prev => {
-                        const updated = shouldRemove
-                            ? prev.filter(w => w.id !== word.id)
-                            : prev.map(w => w.id === word.id ? { ...w, flagged: newFlag } : w)
+                        const updated = prev.map(w => w.id === word.id ? { ...w, flagged: newFlag } : w)
                         wordsRef.current = updated
                         return updated
                     })
@@ -135,17 +134,20 @@ function VocabTable() {
                         body: JSON.stringify({ flagged: newFlag }),
                     })
                 }
-            } else if (key === 'e' || key === 'E') {
+            } else if (key === 'Enter') {
                 const word = wordsRef.current[selectedIndexRef.current]
                 if (word) { editingWordRef.current = word; setEditingWord(word) }
             }
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't intercept keys when modal is open
+            if (editingWordRef.current) return
+            
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault()
             }
-            if (e.key === 'e' || e.key === 'E') {
+            if (e.key === 'Enter') {
                 e.preventDefault()
             }
             if (e.repeat) return
@@ -178,6 +180,9 @@ function VocabTable() {
         }
 
         const handleKeyUp = () => {
+            // Don't handle key repeats when modal is open
+            if (editingWordRef.current) return
+            
             if (repeatTimeout) clearTimeout(repeatTimeout)
             if (repeatInterval) clearInterval(repeatInterval)
         }
@@ -195,8 +200,8 @@ function VocabTable() {
 	const rowClass = (w: VocabWord, i: number) => {
 		const classes = []
 		if (i === selectedIndex) classes.push('row-selected')
-		if (w.flagged === 1) classes.push('row-flagged')
-		if (w.flagged === -1) classes.push('row-excluded')
+		if (w.flagged === 2) classes.push('row-super-flagged')
+		else if (w.flagged === 1) classes.push('row-flagged')
 		if (w.noun_flagged === 1) classes.push('row-noun-flagged')
 		return classes.join(' ')
 	}
@@ -268,13 +273,13 @@ function VocabTable() {
                 <div className="legend">
                     <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
                     <span><kbd>→</kbd><kbd>←</kbd> show / hide answer</span>
-                    <span><kbd>F</kbd> flag / unflag</span>
-                    <span><kbd>D</kbd> exclude / restore</span>
-                    <span><kbd>E</kbd> edit</span>
+                    <span><kbd>E</kbd> toggle examples</span>
+                    <span><kbd>1</kbd> unflag <kbd>2</kbd> flag <kbd>3</kbd> super-flag</span>
+                    <span><kbd>↵</kbd> edit</span>
                 </div>
             </div>
 
-            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}${wordType === 'noun' ? ' noun-mode' : ''}`}>
+            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}${wordType === 'noun' ? ' noun-mode' : ''}${!examplesVisible ? ' examples-hidden' : ''}`}>
                 <table className="header-table">
                     <thead>
                         <tr>
