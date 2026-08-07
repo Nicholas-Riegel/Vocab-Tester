@@ -1,21 +1,37 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
-from db import get_connection
+from typing import Optional, List
+from db import get_connection, ensure_realms_table, ensure_realm_ids_column, migrate_realm_names_to_ids
 from pydantic import BaseModel
 
 app = FastAPI()
 
+# Ensure database schema is up to date
+ensure_realms_table()
+ensure_realm_ids_column()
+migrate_realm_names_to_ids()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite's default port
-        "chrome-extension://*",   # Allow Chrome extension
+        "http://localhost:5173",    # Vite's default port
+        "http://127.0.0.1:5173",    # Vite on 127.0.0.1
+        "chrome-extension://*",     # Allow Chrome extension
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/realms")
+def get_realms():
+    """Get list of all available realms with their IDs."""
+    conn = get_connection()
+    try:
+        rows = conn.execute("SELECT id, name FROM realms ORDER BY id").fetchall()
+        return [{"id": row[0], "name": row[1]} for row in rows]
+    finally:
+        conn.close()
 
 @app.get("/vocab")
 def get_vocab(
@@ -23,6 +39,7 @@ def get_vocab(
     word_type: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     level: Optional[str] = Query(None),
+    realm: Optional[str] = Query(None),
 ):
     conn = get_connection()
     try:
@@ -50,6 +67,14 @@ def get_vocab(
         if level:
             sql += " AND level = ?"
             params.append(level)
+        if realm:
+            # Get realm ID from realm name
+            realm_row = conn.execute("SELECT id FROM realms WHERE name = ?", (realm,)).fetchone()
+            if realm_row:
+                realm_id = str(realm_row[0])
+                # Search for realm ID in comma-separated realm_ids (with word boundaries)
+                sql += " AND (realm_ids = ? OR realm_ids LIKE ? OR realm_ids LIKE ? OR realm_ids LIKE ?)"
+                params.extend([realm_id, f"{realm_id},%", f"%,{realm_id}", f"%,{realm_id},%"])
 
         if source == 'Frequency List':
             sql += " ORDER BY frequency_rank"
@@ -103,6 +128,7 @@ class VocabUpdate(BaseModel):
     plural: Optional[str] = None
     notes: Optional[str] = None
     example: Optional[str] = None
+    realm_ids: Optional[str] = None  # Comma-separated realm IDs, e.g. '1,3,5'
 
 @app.delete("/vocab/{word_id}")
 def delete_vocab(word_id: int):
@@ -122,11 +148,11 @@ def update_vocab(word_id: int, body: VocabUpdate):
             """UPDATE vocab SET
                 word = ?, article = ?, english = ?, word_type = ?,
                 source = ?, chapter = ?, forms = ?, plural = ?,
-                notes = ?, example = ?
+                notes = ?, example = ?, realm_ids = ?
             WHERE id = ?""",
             (body.word, body.article, body.english, body.word_type,
              body.source, body.chapter, body.forms, body.plural,
-             body.notes, body.example, word_id)
+             body.notes, body.example, body.realm_ids or '', word_id)
         )
         conn.commit()
         row = conn.execute("SELECT * FROM vocab WHERE id = ?", (word_id,)).fetchone()
@@ -173,8 +199,8 @@ def quick_add_vocab(body: QuickAddVocab):
     conn = get_connection()
     try:
         conn.execute(
-            """INSERT INTO vocab (word, article, english, word_type, source, chapter, flagged)
-               VALUES (?, ?, ?, ?, 'Browser Extension', 0, 0)""",
+            """INSERT INTO vocab (word, article, english, word_type, source, chapter, flagged, realm)
+               VALUES (?, ?, ?, ?, 'Browser Extension', 0, 0, '[]')""",
             (body.word, body.article, body.english, body.word_type)
         )
         conn.commit()

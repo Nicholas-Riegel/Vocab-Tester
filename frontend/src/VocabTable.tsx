@@ -16,6 +16,7 @@ interface VocabWord {
 	flagged: number
 	noun_flagged: number
 	level: string | null
+	realm_ids: string | null  // Comma-separated realm IDs, e.g. '1,3,5'
 }
 
 const SOURCES = [
@@ -43,21 +44,31 @@ const STATUSES = [
 	{ label: 'All', value: 'all' },
 ]
 
+interface Realm {
+	id: number
+	name: string
+}
+
 function VocabTable() {
 	
 	const [words, setWords] = useState<VocabWord[]>([])
     const [source, setSource] = useState('')
     const [wordType, setWordType] = useState('')
     const [status, setStatus] = useState('all')
+    const [realm, setRealm] = useState('')
+    const [realms, setRealms] = useState<Realm[]>([])
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [answerVisible, setAnswerVisible] = useState(false)
     const [examplesVisible, setExamplesVisible] = useState(true)
+    const [realmVisible, setRealmVisible] = useState(false)
     const [editingWord, setEditingWord] = useState<VocabWord | null>(null)
+    const [showLegend, setShowLegend] = useState(false)
     const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
     const selectedIndexRef = useRef(0)
     const wordsRef = useRef<VocabWord[]>([])
     const statusRef = useRef('all')
     const wordTypeRef = useRef('')
+    const realmRef = useRef('')
     const editingWordRef = useRef<VocabWord | null>(null)
 
     const moveTo = (newIndex: number) => {
@@ -71,6 +82,7 @@ function VocabTable() {
         const params = new URLSearchParams()
         if (source) params.append('source', source)
         if (wordType) params.append('word_type', wordType)
+        if (realm) params.append('realm', realm)
         params.append('status', status)
 
         fetch(`http://127.0.0.1:8000/vocab?${params}`)
@@ -84,8 +96,15 @@ function VocabTable() {
     }
 
     useEffect(() => {
+        // Fetch realms on component mount
+        fetch('http://127.0.0.1:8000/realms')
+            .then(res => res.json())
+            .then(data => setRealms(data))
+    }, [])
+
+    useEffect(() => {
         fetchWords()
-    }, [source, wordType, status])
+    }, [source, wordType, status, realm])
 
     useEffect(() => {
 
@@ -105,6 +124,8 @@ function VocabTable() {
                 setAnswerVisible(false)
             } else if (key === 'e' || key === 'E') {
                 setExamplesVisible(prev => !prev)
+            } else if (key === 'r' || key === 'R') {
+                setRealmVisible(prev => !prev)
             } else if (key === '1' || key === '2' || key === '3') {
                 const word = wordsRef.current[selectedIndexRef.current]
                 if (!word) return
@@ -208,6 +229,24 @@ function VocabTable() {
 		return classes.join(' ')
 	}
 
+	// Helper to display realms for a word (convert IDs to display names)
+	const displayRealms = (word: VocabWord): string => {
+		if (!word.realm_ids) return ''
+		try {
+			const realmIds = word.realm_ids.split(',').map(id => id.trim()).filter(id => id)
+			const display = realmIds
+				.map(idStr => {
+					const id = Number(idStr)
+					const realm = realms.find(r => r.id === id)
+					return realm ? realm.name : idStr
+				})
+				.join(', ')
+			return display
+		} catch {
+			return ''
+		}
+	}
+
 	const handleSave = (updated: VocabWord) => {
 		fetch(`http://127.0.0.1:8000/vocab/${updated.id}`, {
 			method: 'PUT',
@@ -264,6 +303,15 @@ function VocabTable() {
                     </select>
                     </label>
                     <label>
+                    Realm:
+                    <select value={realm} onChange={e => { realmRef.current = e.target.value; setRealm(e.target.value) }}>
+                        <option value="">All</option>
+                        {realms.map(r => (
+                        <option key={r.name} value={r.name}>{r.name}</option>
+                        ))}
+                    </select>
+                    </label>
+                    <label>
                     Status:
                     <select value={status} onChange={e => { statusRef.current = e.target.value; setStatus(e.target.value) }}>
                         {STATUSES.map(s => (
@@ -272,27 +320,33 @@ function VocabTable() {
                     </select>
                     </label>
                 </div>
+                <button className="help-button" onClick={() => setShowLegend(!showLegend)}>?
+                </button>
+            </div>
+            {showLegend && (
                 <div className="legend">
                     <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
                     <span><kbd>→</kbd><kbd>←</kbd> show / hide answer</span>
                     <span><kbd>E</kbd> toggle examples</span>
+                    <span><kbd>R</kbd> toggle realms</span>
                     <span><kbd>1</kbd> unflag <kbd>2</kbd> flag <kbd>3</kbd> super-flag</span>
                     <span><kbd>↵</kbd> edit</span>
                 </div>
-            </div>
+            )}
 
-            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}${wordType === 'noun' ? ' noun-mode' : ''}${!examplesVisible ? ' examples-hidden' : ''}`}>
+            <div className={`table-wrapper${answerVisible ? ' answer-visible' : ''}${wordType === 'noun' ? ' noun-mode' : ''}${!examplesVisible ? ' examples-hidden' : ''}${!realmVisible ? ' realm-hidden' : ''}`}>
                 <table className="header-table">
                     <thead>
                         <tr>
                             <th className="row-num">#</th>
                             <th className="article-col">Art.</th>
                             <th>Word</th>
-                            <th className="answer-col">Verb Forms</th>
+                            <th className="answer-col forms-col">Verb Forms</th>
                             <th className="answer-col">Plural</th>
                             <th className="answer-col">Notes</th>
                             <th className="question-col">Example</th>
                             <th className="answer-col">English</th>
+                            <th className="realms-col">Realms</th>
                         </tr>
                     </thead>
                 </table>
@@ -304,11 +358,12 @@ function VocabTable() {
                                 <td className="row-num">{i + 1}</td>
                                 <td className="article-col">{wordType === 'noun' ? (i === selectedIndex ? (w.article ?? '') : '') : (w.article ?? '')}</td>
                                 <td>{w.word}</td>
-                                <td className="answer-col">{i === selectedIndex ? (w.forms ?? '') : ''}</td>
+                                <td className="answer-col forms-col">{i === selectedIndex ? (w.forms ?? '') : ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.plural ?? '') : ''}</td>
                                 <td className="answer-col">{i === selectedIndex ? (w.notes ?? '') : ''}</td>
                                 <td className="question-col">{wordType === 'noun' ? (i === selectedIndex ? (w.example ?? '') : '') : (w.example ?? '')}</td>
                                 <td className="answer-col">{i === selectedIndex ? w.english : ''}</td>
+                                <td className="realms-col">{displayRealms(w)}</td>
                             </tr>
                             ))}
                         </tbody>
@@ -318,6 +373,7 @@ function VocabTable() {
 			{editingWord && (
 				<EditModal
 					word={editingWord}
+					realms={realms}
 					onSave={handleSave}
 					onDelete={handleDelete}
 					onClose={() => { editingWordRef.current = null; setEditingWord(null) }}

@@ -15,10 +15,17 @@ interface VocabWord {
 	flagged: number
 	noun_flagged: number
 	level: string | null
+	realm_ids: string | null  // Comma-separated realm IDs
+}
+
+interface Realm {
+	id: number
+	name: string
 }
 
 interface EditModalProps {
 	word: VocabWord
+	realms: Realm[]
 	onSave: (updated: VocabWord) => void
 	onDelete: () => void
 	onClose: () => void
@@ -34,7 +41,25 @@ const SOURCES = [
 
 const WORD_TYPES = ['noun', 'verb', 'phrase', 'other']
 
-function EditModal({ word, onSave, onDelete, onClose }: EditModalProps) {
+function EditModal({ word, realms, onSave, onDelete, onClose }: EditModalProps) {
+	// Parse realm_ids (comma-separated IDs) to create object for checkboxes
+	const parseRealmIds = (realmIdsStr: string | null): Record<number, boolean> => {
+		try {
+			if (!realmIdsStr) {
+				return Object.fromEntries(realms.map(r => [r.id, false]))
+			}
+			const ids = realmIdsStr.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id))
+			const obj: Record<number, boolean> = {}
+			realms.forEach(r => {
+				obj[r.id] = ids.includes(r.id)
+			})
+			return obj
+		} catch (e) {
+			console.error('Error parsing realm IDs:', e)
+			return Object.fromEntries(realms.map(r => [r.id, false]))
+		}
+	}
+
 	const [form, setForm] = useState({
 		word: word.word,
 		article: word.article ?? '',
@@ -46,6 +71,7 @@ function EditModal({ word, onSave, onDelete, onClose }: EditModalProps) {
 		plural: word.plural ?? '',
 		notes: word.notes ?? '',
 		example: word.example ?? '',
+		realm_ids: parseRealmIds(word.realm_ids),
 	})
 
 	const dialogRef = useRef<HTMLDivElement>(null)
@@ -59,10 +85,28 @@ function EditModal({ word, onSave, onDelete, onClose }: EditModalProps) {
 	}, [onClose])
 
 	const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-		setForm(prev => ({ ...prev, [field]: e.target.value }))
+		setForm(prev => {
+			if (field === 'realm-checkbox' && e.target instanceof HTMLInputElement) {
+				// Handle realm checkbox
+				const realmId = Number(e.target.value)
+				return {
+					...prev,
+					realm_ids: {
+						...prev.realm_ids,
+						[realmId]: e.target.checked,
+					},
+				}
+			}
+			return { ...prev, [field]: e.target.value }
+		})
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault()
+		// Convert realm_ids object back to comma-separated string
+		const realmIdArray = Object.entries(form.realm_ids)
+			.filter(([, checked]) => checked)
+			.map(([id]) => id)
+		
 		onSave({
 			...word,
 			word: form.word,
@@ -75,6 +119,7 @@ function EditModal({ word, onSave, onDelete, onClose }: EditModalProps) {
 			plural: form.plural || null,
 			notes: form.notes || null,
 			example: form.example || null,
+			realm_ids: realmIdArray.length > 0 ? realmIdArray.join(',') : '',
 		})
 	}
 
@@ -131,6 +176,23 @@ function EditModal({ word, onSave, onDelete, onClose }: EditModalProps) {
 							<div className="modal-field modal-field-grow">
 								<label>Plural</label>
 								<input value={form.plural} onChange={set('plural')} />
+							</div>
+						</div>
+
+						<div className="modal-field">
+							<label>Realms</label>
+							<div className="realm-checkboxes">
+								{realms.map(r => (
+									<label key={r.id} className="realm-checkbox">
+										<input
+											type="checkbox"
+											value={r.id.toString()}
+											checked={form.realm_ids[r.id] || false}
+											onChange={set('realm-checkbox')}
+										/>
+									{r.name}
+									</label>
+								))}
 							</div>
 						</div>
 
